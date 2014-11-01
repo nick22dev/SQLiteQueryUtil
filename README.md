@@ -13,7 +13,7 @@ NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSU
 NSString *docsDir = [dirPaths objectAtIndex:0];
 NSString *databasePath = [[docsDir stringByAppendingPathComponent:@"database"] stringByAppendingPathExtension:@"sqlite"];
 
-sqlite3_int64 fooId = 100;
+sqlite3_int64 fooIdToQuery = 100;
 __block NSMutableArray *foos = nil;
 
 NSString *query = @"SELECT ID,fooName FROM fooTable WHERE ID=?;";
@@ -22,7 +22,7 @@ SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePat
 
 [queryUtil queryDB:query withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
 
-    sqlite3_bind_int64(queryStatement, 1, fooId); // bind params start at 1
+    sqlite3_bind_int64(queryStatement, 1, fooIdToQuery); // bind params start at 1
 
 } onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
     if(currentRow == 0) {
