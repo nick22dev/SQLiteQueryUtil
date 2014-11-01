@@ -16,7 +16,7 @@ NSString *databasePath = [[docsDir stringByAppendingPathComponent:@"database"] s
 sqlite3_int64 fooId = 100;
 __block NSMutableArray *foos = nil;
 
-NSString *query = @"SELECT fooId,fooName FROM fooTable WHERE ID=?;";
+NSString *query = @"SELECT ID,fooName FROM fooTable WHERE ID=?;";
 
 SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePath];
 
