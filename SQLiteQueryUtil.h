@@ -31,6 +31,15 @@
 
 @interface SQLiteQueryUtil : NSObject
 
+/**
+ Initializes a 'SQLiteQueryUtil' object with the specified local database path
+ 
+ This is the designated initializer
+ 
+ @param dbPath database path on disk including filename and extension
+ 
+ @return newly-initialized SQLiteQueryUtil
+ */
 -(id)initWithDBPath:(NSString*)dbPath;
 
 /**
@@ -55,12 +64,14 @@
 
 
 /**
- returns the db user_version
+ user_version of the sqllite database
+ 
+ @return the db user_version
  */
 -(int32_t)dbVersion;
 
 /**
- sets the db user_version
+ sets the user_version of the sqllite database
  
  @param updatedVersion user_version to set
  */
@@ -68,23 +79,29 @@
 
 
 /**
- opens a read only db connection. returns the sqlite result
+ opens a read only db connection
  
  @param db database reference to assign the connection
+ 
+ @return sqlite result
  */
 -(int)openDBReadOnly:(sqlite3**)db;
 
 /**
- opens a read|write db connection. returns the sqlite result
+ opens a read|write db connection
  
  @param db database reference to assign the connection
+ 
+ @return sqlite result
  */
 -(int)openDBReadWrite:(sqlite3**)db;
 
 /**
- opens a db connection for creating tables. returns the sqlite result
+ opens a db connection for creating tables
  
  @param db database reference to assign the connection
+ 
+ @return sqlite result
  */
 -(int)openForCreateDB:(sqlite3**)db;
 
@@ -138,14 +155,16 @@
 -(void)writeQueryInDB:(NSString*)query withDB:(sqlite3**)dbToUse withBindParamsCallback:(void (^)(sqlite3_stmt *queryStatement))bindParamsCallback onNextRowCallback:(void (^)(sqlite3_stmt *queryStatement, NSUInteger currentRow))onNextRowCallback onQueryCompleteCallack:(void(^)())onQueryCompleteCallack;
 
 /**
- returns the db user_version
+ user_version of the sqllite database
  
  @param db database reference
+ 
+ @return the db user_version
  */
 -(int32_t)dbVersionWithDB:(sqlite3**)db;
 
 /**
- sets the db user_version
+ sets the user_version of the sqllite database
  
  @param updatedVersion user_version to set
  @param db database reference
