@@ -82,6 +82,13 @@
 -(int)openDBReadWrite:(sqlite3**)db;
 
 /**
+ opens a db connection for creating tables. returns the sqlite result
+ 
+ @param db database reference to assign the connection
+ */
+-(int)openForCreateDB:(sqlite3**)db;
+
+/**
  uses sqlite limit and offset to iterate over a query's result set
  
  @param query sqlite query. must not contain a trailing ;
