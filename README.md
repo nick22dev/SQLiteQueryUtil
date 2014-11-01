@@ -5,13 +5,13 @@ Set of utility functions for accessing and manipulating a sqlite database
 
 example: select
 
+```
 NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 NSString *docsDir = [dirPaths objectAtIndex:0];
 NSString *databasePath = [[docsDir stringByAppendingPathComponent:@"database"] stringByAppendingPathExtension:@"sqlite"];
 
 sqlite3_int64 fooId = 100;
 __block NSMutableArray *foos = nil;
-
 
 NSString *query = @"SELECT fooId,fooName FROM fooTable WHERE ID=?;";
 
@@ -40,4 +40,4 @@ SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePat
 } onQueryCompleteCallack:^{
 
 }];
-
+```
