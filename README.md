@@ -5,7 +5,7 @@ Set of utility functions for accessing and manipulating a sqlite database on iOS
 
 Dependencies: libsqlite3.dylib
 
-(included in iOS framework in Xcode, select this lib from Xcode Project->Build Phases->Link Binary With Libraries)
+(libsqlite3 is included in Xcode's iOS distribution. Select this lib from Xcode Project->Build Phases->Link Binary With Libraries)
 
 example: select
 
