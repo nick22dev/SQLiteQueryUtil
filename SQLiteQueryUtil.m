@@ -97,7 +97,7 @@
 }
 
 -(void)setdbVersion:(int32_t)updatedVersion withDB:(sqlite3**)db {
-    if(!(updatedVersion >=0 && updatedVersion < 99999)) {
+    if(updatedVersion < INT32_MIN || updatedVersion > INT32_MAX) {
         NSLog(@"[SQLITE] Invalid version args");
         return;
     }
@@ -114,10 +114,11 @@
 }
 
 -(void)setdbVersion:(int32_t)updatedVersion {
-    if(!(updatedVersion >=0 && updatedVersion < 99999)) {
+    if(updatedVersion < INT32_MIN || updatedVersion > INT32_MAX) {
         NSLog(@"[SQLITE] Invalid version args");
         return;
     }
+    
     
     NSString *query = [NSString stringWithFormat:@"PRAGMA user_version=%d;", updatedVersion];
     
@@ -131,7 +132,7 @@
 }
 
 // capture the workflow open, exc, close with error handling
--(void)openDB:(int (^)(sqlite3** db))opendb closedb:(int (^)(sqlite3*db))closedb andExecuteSQL:(NSString*)query withBindParamsCallback:(void (^)(sqlite3_stmt *queryStatement))bindParamsCallback onNextRowCallback:(void (^)(sqlite3_stmt *queryStatement, NSUInteger currentRow))onNextRowCallback onQueryCompleteCallack:(void(^)())onQueryCompleteCallack {
+-(void)openDB:(int (^)(sqlite3** db))opendb closedb:(int (^)(sqlite3*db))closedb andExecuteSQL:(NSString*)query isWriteQuery:(BOOL)isWriteQuery withBindParamsCallback:(void (^)(sqlite3_stmt *queryStatement))bindParamsCallback onNextRowCallback:(void (^)(sqlite3_stmt *queryStatement, NSUInteger currentRow))onNextRowCallback onQueryCompleteCallack:(void(^)())onQueryCompleteCallack {
     
     if(![query isKindOfClass:[NSString class]]) {
         NSLog(@"[SQLITE] Invalid query object type");
@@ -204,13 +205,20 @@
         while(rowResult == SQLITE_ROW) {
             if(onNextRowCallback) {
                 onNextRowCallback(statement, currentRow);
-                ++currentRow;
             }
+            ++currentRow;
             
             rowResult = sqlite3_step(statement);
         }
         
-        if(rowResult != SQLITE_DONE) {
+        if(rowResult == SQLITE_DONE) {
+            // for insert execute onNextRowCallback once for caller to retrieve row id via
+            // execute sqlite3_last_insert_rowid
+            if(isWriteQuery && currentRow == 0 && onNextRowCallback) {
+                onNextRowCallback(statement, currentRow);
+            }
+        }
+        else {
             NSLog(@"[SQLITE] Error unexpected last row result %d %s", rowResult, sqlite3_errmsg(db));
         }
     }
@@ -248,7 +256,7 @@
         
         return [self openDBReadOnly:db];
         
-    } closedb:nil andExecuteSQL:query withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
+    } closedb:nil andExecuteSQL:query isWriteQuery:NO withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
 }
 
 -(void)queryDB:(NSString*)query withDB:(sqlite3**)dbToUse withBindParamsCallback:(void (^)(sqlite3_stmt *queryStatement))bindParamsCallback onNextRowCallback:(void (^)(sqlite3_stmt *queryStatement, NSUInteger currentRow))onNextRowCallback onQueryCompleteCallack:(void(^)())onQueryCompleteCallack {
@@ -263,7 +271,7 @@
         // if db is passed caller must close
         return SQLITE_OK;
         
-    } andExecuteSQL:query withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
+    } andExecuteSQL:query isWriteQuery:NO withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
 }
 
 -(void)writeQueryInDB:(NSString*)query withDB:(sqlite3**)dbToUse withBindParamsCallback:(void (^)(sqlite3_stmt *queryStatement))bindParamsCallback onNextRowCallback:(void (^)(sqlite3_stmt *queryStatement, NSUInteger currentRow))onNextRowCallback onQueryCompleteCallack:(void(^)())onQueryCompleteCallack {
@@ -278,7 +286,7 @@
         // if db is passed caller must close
         return SQLITE_OK;
         
-    } andExecuteSQL:query withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
+    } andExecuteSQL:query isWriteQuery:YES withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
 }
 
 -(void)writeQueryInDB:(NSString*)query withBindParamsCallback:(void (^)(sqlite3_stmt *queryStatement))bindParamsCallback onNextRowCallback:(void (^)(sqlite3_stmt *queryStatement, NSUInteger currentRow))onNextRowCallback onQueryCompleteCallack:(void(^)())onQueryCompleteCallack {
@@ -287,7 +295,7 @@
         
         return [self openDBReadWrite:db];
         
-    } closedb:nil andExecuteSQL:query withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
+    } closedb:nil andExecuteSQL:query isWriteQuery:YES withBindParamsCallback:bindParamsCallback onNextRowCallback:onNextRowCallback onQueryCompleteCallack:onQueryCompleteCallack];
 }
 
 // query should not include ;, limit will be inserted at the end
