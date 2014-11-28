@@ -96,10 +96,12 @@
     return version;
 }
 
--(void)setdbVersion:(int32_t)updatedVersion withDB:(sqlite3**)db {
+-(BOOL)setdbVersion:(int32_t)updatedVersion withDB:(sqlite3**)db {
+    __block BOOL success = NO;
+    
     if(updatedVersion < INT32_MIN || updatedVersion > INT32_MAX) {
         NSLog(@"[SQLITE] Invalid version args");
-        return;
+        return success;
     }
     
     NSString *query = [NSString stringWithFormat:@"PRAGMA user_version=%d;", updatedVersion];
@@ -107,16 +109,20 @@
     [self writeQueryInDB:query withDB:db withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
         
     } onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
-        
+        success = YES;
     } onQueryCompleteCallack:^{
         
     }];
+    
+    return success;
 }
 
--(void)setdbVersion:(int32_t)updatedVersion {
+-(BOOL)setdbVersion:(int32_t)updatedVersion {
+    __block BOOL success = NO;
+    
     if(updatedVersion < INT32_MIN || updatedVersion > INT32_MAX) {
         NSLog(@"[SQLITE] Invalid version args");
-        return;
+        return success;
     }
     
     
@@ -125,10 +131,12 @@
     [self writeQueryInDB:query withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
         
     } onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
-        
+        success = YES;
     } onQueryCompleteCallack:^{
         
     }];
+    
+    return success;
 }
 
 // capture the workflow open, exc, close with error handling
@@ -381,7 +389,19 @@
     return transactionSucceess;
 }
 
+-(BOOL)createTransactionWithOperations:(NSArray*)operationsInTransaction {
+    return [self transactionWithOpenDB:^int(sqlite3 **db) {
+        return [self openForCreateDB:db];
+    } operations:operationsInTransaction];
+}
+
 -(BOOL)writeTransactionWithOperations:(NSArray*)operationsInTransaction {
+    return [self transactionWithOpenDB:^int(sqlite3 **db) {
+        return [self openDBReadWrite:db];
+    } operations:operationsInTransaction];
+}
+
+-(BOOL)transactionWithOpenDB:(int (^)(sqlite3** db))opendb operations:(NSArray*)operationsInTransaction {
     BOOL(^closedb)(sqlite3*) = ^BOOL(sqlite3 *db) {
         int closeResult = closeResult = sqlite3_close(db);
         BOOL closeSuccess = closeResult == SQLITE_OK;
@@ -391,10 +411,9 @@
         return closeSuccess;
     };
     
-    
     return [self transaction:^BOOL(sqlite3 **dbPtr){
         sqlite3 *db = NULL;
-        int dbOpenResult = [self openDBReadWrite:&db];
+        int dbOpenResult = opendb(&db); // todo check opendb block ref strong/weak
         *dbPtr = db;
         
         BOOL beginTransactionSuccess = dbOpenResult == SQLITE_OK;

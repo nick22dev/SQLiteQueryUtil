@@ -74,8 +74,10 @@
  sets the user_version of the sqllite database
  
  @param updatedVersion user_version to set
+ 
+ @return successfully executed
  */
--(void)setdbVersion:(int32_t)updatedVersion;
+-(BOOL)setdbVersion:(int32_t)updatedVersion;
 
 
 /**
@@ -168,8 +170,10 @@
  
  @param updatedVersion user_version to set
  @param db database reference
+ 
+ @return successfully executed
  */
--(void)setdbVersion:(int32_t)updatedVersion withDB:(sqlite3**)db;
+-(BOOL)setdbVersion:(int32_t)updatedVersion withDB:(sqlite3**)db;
 
 typedef BOOL(^SQLiteQueryUtilTransactionOperation)(sqlite3 *, NSMutableDictionary *);
 
@@ -185,7 +189,7 @@ typedef BOOL(^SQLiteQueryUtilTransactionOperation)(sqlite3 *, NSMutableDictionar
 -(BOOL)transaction:(BOOL (^)(sqlite3 **db))beginTransaction operationsInTransaction:(NSArray*)operationsInTransaction endTransaction:(BOOL (^)(BOOL transactionSucceeded, sqlite3 *db))endTransaction;
 
 /**
- execute an array of operations wrapped in a sqlite 'begin immediate transaction'
+ execute an array of write operations wrapped in a sqlite 'begin immediate transaction'
  if all operationsInTransaction return success the transaction is committed
  else the transaction is rolled back
  for example many insert statements that should be executed atomically on the database
@@ -195,4 +199,16 @@ typedef BOOL(^SQLiteQueryUtilTransactionOperation)(sqlite3 *, NSMutableDictionar
  @return successfully committed all operationsInTransaction
  */
 -(BOOL)writeTransactionWithOperations:(NSArray*)operationsInTransaction;
+
+/**
+ execute an array of create operations wrapped in a sqlite 'begin immediate transaction'
+ if all operationsInTransaction return success the transaction is committed
+ else the transaction is rolled back
+ for example many insert statements that should be executed atomically on the database
+ 
+ @prarm operationsInTransaction an array of SQLiteQueryUtilTransactionOperation's
+ 
+ @return successfully committed all operationsInTransaction
+ */
+-(BOOL)createTransactionWithOperations:(NSArray*)operationsInTransaction;
 @end
