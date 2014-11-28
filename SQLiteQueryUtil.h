@@ -170,4 +170,29 @@
  @param db database reference
  */
 -(void)setdbVersion:(int32_t)updatedVersion withDB:(sqlite3**)db;
+
+typedef BOOL(^SQLiteQueryUtilTransactionOperation)(sqlite3 *, NSMutableDictionary *);
+
+/**
+ block wrapper for a sqlite transaction
+ 
+ @param beginTransaction block to open the db and execute for example begin transaction
+ @prarm operationsInTransaction an array of SQLiteQueryUtilTransactionOperation's
+ @param endTransaction block to execute a commit/rollback and close the db
+ 
+ @return successfully committed all operationsInTransaction
+ */
+-(BOOL)transaction:(BOOL (^)(sqlite3 **db))beginTransaction operationsInTransaction:(NSArray*)operationsInTransaction endTransaction:(BOOL (^)(BOOL transactionSucceeded, sqlite3 *db))endTransaction;
+
+/**
+ execute an array of operations wrapped in a sqlite 'begin immediate transaction'
+ if all operationsInTransaction return success the transaction is committed
+ else the transaction is rolled back
+ for example many insert statements that should be executed atomically on the database
+ 
+ @prarm operationsInTransaction an array of SQLiteQueryUtilTransactionOperation's
+ 
+ @return successfully committed all operationsInTransaction
+ */
+-(BOOL)writeTransactionWithOperations:(NSArray*)operationsInTransaction;
 @end

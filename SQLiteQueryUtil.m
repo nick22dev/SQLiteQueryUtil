@@ -301,7 +301,7 @@
 // query should not include ;, limit will be inserted at the end
 -(void)enumerateObjectsMatchingQuery:(NSString*)query countQuery:(NSString*)countQuery bufferSize:(NSUInteger)bufferSize withDB:(sqlite3**)dbToUse withBindParamsCallback:(void (^)(sqlite3_stmt *queryStatement))bindParamsCallback onNextRowCallback:(void (^)(sqlite3_stmt *queryStatement, NSUInteger currentRow))onNextRowCallback onQueryCompleteCallack:(void(^)())onQueryCompleteCallack {
     if(!([query isKindOfClass:[NSString class]] && [countQuery isKindOfClass:[NSString class]] && bufferSize > 0)) {
-        NSLog(@"Invalid query usage");
+        NSLog(@"[SQLITE] Invalid query usage");
         return;
     }
     
@@ -350,6 +350,90 @@
     }
     
     onMigrationComplete(migrationSucceeded);
+}
+
+-(BOOL)transaction:(BOOL (^)(sqlite3 **db))beginTransaction operationsInTransaction:(NSArray*)operationsInTransaction endTransaction:(BOOL (^)(BOOL transactionSucceeded, sqlite3 *db))endTransaction {
+    
+    sqlite3 *db = nil;
+    
+    // beginTransaction opens the db and executes begin transaction
+    BOOL transactionSucceess = beginTransaction(&db);
+    
+    if(transactionSucceess) {
+        
+        // allows results to be passed between operations
+        // ie insert row id result used as a foreign key in another statement
+        NSMutableDictionary *contextData = [[NSMutableDictionary alloc] init];
+        
+        for(SQLiteQueryUtilTransactionOperation nextOperation in operationsInTransaction) {
+            // TODO typecheck nextOperation | use wrapper object
+            transactionSucceess &= nextOperation(db, contextData);
+            
+            if(!transactionSucceess) {
+                break;
+            }
+        }
+    }
+    
+    // endTransaction executes commit/rollback and closes the db
+    transactionSucceess &= endTransaction(transactionSucceess, db);
+    
+    return transactionSucceess;
+}
+
+-(BOOL)writeTransactionWithOperations:(NSArray*)operationsInTransaction {
+    BOOL(^closedb)(sqlite3*) = ^BOOL(sqlite3 *db) {
+        int closeResult = closeResult = sqlite3_close(db);
+        BOOL closeSuccess = closeResult == SQLITE_OK;
+        if(closeResult != SQLITE_OK) {
+            NSLog(@"[SQLITE] Error failed to close db %d %s", closeResult, sqlite3_errmsg(db));
+        }
+        return closeSuccess;
+    };
+    
+    
+    return [self transaction:^BOOL(sqlite3 **dbPtr){
+        sqlite3 *db = NULL;
+        int dbOpenResult = [self openDBReadWrite:&db];
+        *dbPtr = db;
+        
+        BOOL beginTransactionSuccess = dbOpenResult == SQLITE_OK;
+        
+        if (beginTransactionSuccess) {
+            // http://sqlite.org/lang_transaction.html
+            // IMMEDIATE (Rather than exclusive) allows readonly queries inside the transaction
+            // without error but changes (insert, update, delete) executed within the
+            // transaction are  not visible
+            int beginResponse = sqlite3_exec(db, "BEGIN IMMEDIATE TRANSACTION", 0, 0, 0);
+            beginTransactionSuccess &= beginResponse == SQLITE_OK;
+            if(beginResponse != SQLITE_OK) {
+                NSLog(@"[SQLITE] Begin Transaction Error: %d %s",beginResponse, sqlite3_errmsg(db));
+            }
+        }
+        
+        return beginTransactionSuccess;
+        
+    } operationsInTransaction:operationsInTransaction endTransaction:^BOOL(BOOL transactionSucceeded, sqlite3 *db) {
+        BOOL wholeTransactionSucceeded = transactionSucceeded;
+        
+        if(!transactionSucceeded) {
+            int rollbackResponse = sqlite3_exec(db, "ROLLBACK", 0, 0, 0);
+            if (rollbackResponse != SQLITE_OK) {
+                NSLog(@"[SQLITE] Rollback Error: %d %s",rollbackResponse, sqlite3_errmsg(db));
+            }
+        }
+        else {
+            int commitResponse = sqlite3_exec(db, "COMMIT TRANSACTION", 0, 0, 0);
+            wholeTransactionSucceeded &= commitResponse == SQLITE_OK;
+            if (commitResponse != SQLITE_OK) {
+                NSLog(@"[SQLITE] Commit Transaction Error: %d %s",commitResponse, sqlite3_errmsg(db));
+            }
+        }
+        
+        wholeTransactionSucceeded &= closedb(db);
+        
+        return wholeTransactionSucceeded;
+    }];
 }
 
 @end
