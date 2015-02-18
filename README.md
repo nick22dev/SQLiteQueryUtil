@@ -10,14 +10,12 @@ Dependencies: libsqlite3.dylib
 example: select
 
 ```
-NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-NSString *docsDir = [dirPaths objectAtIndex:0];
-NSString *databasePath = [[docsDir stringByAppendingPathComponent:@"database"] stringByAppendingPathExtension:@"sqlite"];
+NSString *databasePath = "";
 
 sqlite3_int64 fooIdToQuery = 100;
 __block NSMutableArray *foos = nil;
 
-NSString *query = @"SELECT ID,fooName FROM fooTable WHERE ID=?;";
+NSString *query = @"select id,name from foo where id=?;";
 
 SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePath];
 
@@ -36,8 +34,8 @@ SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePat
     NSString *fooName = fooNameChars != NULL ? [[NSString alloc] initWithUTF8String:fooNameChars] : nil;
 
     Foo *nextFoo = [[Foo alloc] init];
-    nextFoo.foodId = fooId;
-    nextFoo.fooName = fooName;
+    nextFoo.id = fooId;
+    nextFoo.name = fooName;
 
     [foos addObject:nextFoo];
 
