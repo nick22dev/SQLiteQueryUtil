@@ -7,17 +7,24 @@ Dependencies: libsqlite3.dylib
 
 (libsqlite3 is included in Xcode's iOS distribution. Select this lib from Xcode Project->Build Phases->Link Binary With Libraries)
 
+example: init
+```
+NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+NSString *docsDir = [dirPaths objectAtIndex:0];
+NSString *databasePath = [[docsDir stringByAppendingPathComponent:@"database"] stringByAppendingPathExtension:@"sqlite"];
+
+SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePath];
+```
+
 example: select
 
 ```
-NSString *databasePath = "";
+/* init SQLiteQueryUtil queryUtil instance with database path */
 
 sqlite3_int64 fooIdToQuery = 100;
 __block NSMutableArray *foos = nil;
 
 NSString *query = @"select id,name from foo where id=?;";
-
-SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePath];
 
 [queryUtil queryDB:query withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
 
