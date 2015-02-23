@@ -97,7 +97,6 @@ __block sqlite3 *transactionDBConn = nil;
 int openResult = [queryUtil openDBReadWrite:&transactionDBConn];
 
 NSString *foo_name_index_create_sql_stmtString = "create index if not exists foo_name_index on foo(name);"
-NSString *foo_name_index_drop_sql_stmtString = "drop index if exists foo.foo_name_index;"
 
 [queryUtil migrate:^BOOL{
     return currentdbVersion == 1 && openResult == SQLITE_OK;
