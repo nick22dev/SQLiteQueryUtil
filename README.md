@@ -82,3 +82,46 @@ NSString *query = @"delete from foo where id=?;";
     success = YES;
 } onQueryCompleteCallack:^{ }];
 ```
+
+example: migration (add an index)
+
+```
+/* init SQLiteQueryUtil queryUtil instance with database path */
+
+int32_t currentdbVersion = [queryUtil dbVersion];
+
+int32_t rollbackDBVersion = 1;
+int32_t targetDBVersion = 2;
+
+__block sqlite3 *transactionDBConn = nil;
+int openResult = [queryUtil openDBReadWrite:&transactionDBConn];
+
+NSString *foo_name_index_create_sql_stmtString = "create index if not exists foo_name_index on foo(name);"
+NSString *foo_name_index_drop_sql_stmtString = "drop index if exists foo.foo_name_index;"
+
+[queryUtil migrate:^BOOL{
+    return currentdbVersion == 1 && openResult == SQLITE_OK;
+} migrate:^{
+    NSLog(@"[SQLITE_MIGRATOR] Migration from v%d to v%d", currentdbVersion, targetDBVersion);
+    [queryUtil writeQueryInDB:foo_name_index_create_sql_stmtString withDB:&transactionDBConn withBindParamsCallback:nil onNextRowCallback:nil onQueryCompleteCallack:nil];
+    
+    // update the db user version so we know migration was successful going forward
+    [queryUtil setdbVersion:targetDBVersion withDB:&transactionDBConn];
+    
+} didMigrationSucceed:^BOOL{
+    return YES;
+} rollback:^{
+    NSLog(@"[SQLITE_MIGRATOR] Migration Rollback to v%d", rollbackDBVersion);
+    
+    if (sqlite3_exec(transactionDBConn, "ROLLBACK;", 0, 0, 0) != SQLITE_OK) {
+        NSLog(@"[SQLITE_MIGRATOR] SQL Error: %s",sqlite3_errmsg(transactionDBConn));
+    }
+    [queryUtil setdbVersion:rollbackDBVersion withDB:&transactionDBConn];
+} onMigrationComplete:^(BOOL didComplete) {
+    int closeResult = sqlite3_close(transactionDBConn);
+    if(closeResult != SQLITE_OK) {
+        NSLog(@"[SQLITE] Error failed to close db %d %s", closeResult, sqlite3_errmsg(transactionDBConn));
+    }
+    NSLog(@"[SQLITE_MIGRATOR] Migration from v%d to v%d %@",currentdbVersion, targetDBVersion, didComplete ? @"SUCCESS" : @"FAIL");
+}
+```
