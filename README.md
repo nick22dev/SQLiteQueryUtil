@@ -60,7 +60,7 @@ NSString *name = "mike";
 NSString *query = @"insert into foo (name) values(?);";
 
 [queryUtil writeQueryInDB:insertSQL withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
-    sqlite3_bind_text(queryStatement, 1, [name UTF8String], -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(queryStatement, 1, [name UTF8String], -1, SQLITE_TRANSIENT); // bind params start at 1
 } onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
     insertResultId = sqlite3_last_insert_rowid(database);
 } onQueryCompleteCallack:^{ }];
@@ -77,7 +77,7 @@ sqlite3_int64 idToDelete = 100;
 NSString *query = @"delete from foo where id=?;";
 
 [queryUtil writeQueryInDB:insertSQL withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
-    sqlite3_bind_int64(queryStatement, 1, idToDelete);
+    sqlite3_bind_int64(queryStatement, 1, idToDelete); // bind params start at 1
 } onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
     success = YES;
 } onQueryCompleteCallack:^{ }];
