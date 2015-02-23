@@ -54,13 +54,13 @@ example: insert
 ```
 /* init SQLiteQueryUtil queryUtil instance with database path */
 
-sqlite3_int64 insertResultId = 100;
-NSString *name = "mike";
+__block sqlite3_int64 insertResultId = -1;
+NSString *nameToInsert = "mike";
 
 NSString *query = @"insert into foo (name) values(?);";
 
 [queryUtil writeQueryInDB:insertSQL withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
-    sqlite3_bind_text(queryStatement, 1, [name UTF8String], -1, SQLITE_TRANSIENT); // bind params start at 1
+    sqlite3_bind_text(queryStatement, 1, [nameToInsert UTF8String], -1, SQLITE_TRANSIENT); // bind params start at 1
 } onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
     insertResultId = sqlite3_last_insert_rowid(database);
 } onQueryCompleteCallack:^{ }];
