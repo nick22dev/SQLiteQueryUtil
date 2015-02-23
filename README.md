@@ -39,7 +39,39 @@ SQLiteQueryUtil *queryUtil = [[SQLiteQueryUtil alloc] initWithDBPath:databasePat
 
     [foos addObject:nextFoo];
 
-} onQueryCompleteCallack:^{
+} onQueryCompleteCallack:^{ }];
+```
 
-}];
+example: insert
+
+```
+/* init SQLiteQueryUtil queryUtil instance with database path */
+
+sqlite3_int64 insertResultId = 100;
+NSString *name = "mike";
+
+NSString *query = @"insert into foo (name) values(?);";
+
+[queryUtil writeQueryInDB:insertSQL withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
+    sqlite3_bind_text(queryStatement, 1, [name UTF8String], -1, SQLITE_TRANSIENT);
+} onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
+    insertResultId = sqlite3_last_insert_rowid(database);
+} onQueryCompleteCallack:^{ }];
+```
+
+example: delete
+
+```
+/* init SQLiteQueryUtil queryUtil instance with database path */
+
+__block BOOL success = NO;
+sqlite3_int64 idToDelete = 100;
+
+NSString *query = @"delete from foo where id=?;";
+
+[queryUtil writeQueryInDB:insertSQL withBindParamsCallback:^(sqlite3_stmt *queryStatement) {
+    sqlite3_bind_int64(queryStatement, 1, idToDelete);
+} onNextRowCallback:^(sqlite3_stmt *queryStatement, NSUInteger currentRow) {
+    success = YES;
+} onQueryCompleteCallack:^{ }];
 ```
