@@ -1,7 +1,7 @@
 SQLiteQueryUtil
 ===============
 
-Set of utility functions for accessing and manipulating a sqlite database on iOS in objective-c
+Set of block functions to wrap common sqlite operations on iOS in objective-c
 
 Dependencies: libsqlite3.dylib
 
