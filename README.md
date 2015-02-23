@@ -83,6 +83,23 @@ NSString *query = @"delete from foo where id=?;";
 } onQueryCompleteCallack:^{ }];
 ```
 
+example: transaction (multiple deletes atomically)
+
+```
+/* init SQLiteQueryUtil queryUtil instance with database path */
+
+[self.queryUtil writeTransactionWithOperations:@[^BOOL(sqlite3 *db, NSMutableDictionary *contextData) {
+    __block BOOL success = NO;
+    /* see delete example */
+    return success;
+},^BOOL(sqlite3 *db, NSMutableDictionary *contextData) {
+    __block BOOL success = NO;
+    /* delete from index table by id */
+    return success;
+}]];
+
+```
+
 example: migration (add an index)
 
 ```
